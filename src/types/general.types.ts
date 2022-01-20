@@ -1,0 +1,1 @@
+export type classObjectType = {[key: string]: boolean}

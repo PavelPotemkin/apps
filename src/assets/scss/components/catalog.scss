@@ -1,0 +1,16 @@
+.catalog {
+  border: 1px solid grey;
+  padding: 20px;    
+  max-width: min(calc(100% - 40px), 1000px);
+  
+  &__controls {
+    display: flex;
+  }
+  
+  &__inner {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-top: 20px;
+  }
+}
