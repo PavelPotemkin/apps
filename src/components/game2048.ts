@@ -276,6 +276,7 @@ export class Game2048 {
             setCube(item, nearestItem.position, newValue)
             this.updateScore(newValue)
             farthestPositions.push(pos)
+            nearestItem = null
             isAnyItemMoved = true
           } else {
             if (farthestPositions.length) {
