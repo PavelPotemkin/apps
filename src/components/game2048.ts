@@ -1,5 +1,6 @@
 import {randomNum} from "@/utils/randomNum";
 import throttle from "lodash/throttle";
+import {set} from "lodash";
 
 const matrixInitData = [
   [11, 12, 13, 14],
@@ -28,7 +29,7 @@ type farthestPositionItemDataType = {
   position: positionType | null
 }
 
-type optionsType = { 
+type optionsType = {
   onScoreUpdate?: (score: number) => void,
   length?: number
 }
@@ -81,8 +82,11 @@ export class Game2048 {
 
     document.addEventListener('keydown', this.keysEventListener)
 
-    this.createCube(this.getRandomEmptyCubePosition()!, 2)
-    this.createCube(this.getRandomEmptyCubePosition()!, 2)
+    // this.createCube(this.getRandomEmptyCubePosition()!, 2)
+    // this.createCube(this.getRandomEmptyCubePosition()!, 2)
+    this.createCube({row: 1, col: 1}, 2)
+    this.createCube({row: 1, col: 2}, 2)
+    this.createCube({row: 1, col: 3}, 2)
   }
 
   stopGame() {
@@ -116,28 +120,28 @@ export class Game2048 {
 
   getRandomEmptyCubePosition(): undefined | positionType {
     const vars = []
-    
+
     for (let i = 0; i < this.length; i++) {
       for (let a = 0; a < this.length; a++) {
         if (!this.matrix[i][a]) {
           vars.push([i, a])
-        } 
+        }
       }
     }
-    
+
     if (!vars.length) {
-      return 
+      return
     }
-    
+
     const [row, col] = vars[randomNum(0, vars.length - 1)]
-    
+
     return {
       row,
       col
     }
   }
 
-  createCube(position: positionType, value?: number, isUnion: boolean = false): HTMLDivElement {
+  createCube(position: positionType, value?: number): HTMLDivElement {
     if (!value) {
       value = this.getRandomCubeValue()
     }
@@ -147,10 +151,6 @@ export class Game2048 {
     cube.setAttribute('data-value', String(value))
     cubeInner.classList.add('game-2048__cube', 'game-2048__cube-inner', 'game-2048__cube--orange')
     cubeInner.innerText = String(value)
-
-    if (isUnion) {
-      cube.setAttribute('data-disabled', '1')
-    }
 
     cube.append(cubeInner)
 
@@ -178,15 +178,33 @@ export class Game2048 {
   }
 
   unionCubes(
-    firstItemData: { position: positionType, item: itemType },
-    secondItemData: { position: positionType, item: itemType },
-    position: positionType,
+    newItemData: { position: positionType, item: itemType },
+    existItemData: { position: positionType, item: itemType },
+    newPosition: positionType,
     value: number
-  ): void {
-    this.removeCube(firstItemData.item, firstItemData.position)
-    this.removeCube(secondItemData.item, secondItemData.position)
-    this.createCube(position, value, true)
+  ) {
+    const newItem = this.matrix[existItemData.position.row][existItemData.position.col]
+    this.matrix[newItemData.position.row][newItemData.position.col] = null
+    this.matrix[existItemData.position.row][existItemData.position.col] = null
+    this.matrix[newPosition.row][newPosition.col] = newItem
+
+    newItemData.item.classList.remove(`game-2048__cube--p-${newItemData.position.row}-${newItemData.position.col}`)
+    newItemData.item.classList.add(`game-2048__cube--p-${newPosition.row}-${newPosition.col}`)
+
+    existItemData.item.classList.remove(`game-2048__cube--p-${existItemData.position.row}-${existItemData.position.col}`)
+    existItemData.item.classList.add(`game-2048__cube--p-${newPosition.row}-${newPosition.col}`)
+
+    existItemData.item.setAttribute('data-value', String(value))
+    existItemData.item.setAttribute('data-disabled', '1')
+    
     this.updateScore(value)
+    
+    setTimeout(() => {
+      console.log(this.matrix)
+      newItemData.item.remove()
+      // @ts-ignore
+      existItemData.item.firstChild!.innerText = String(value)
+    }, itemAnimationMoveTime)
   }
 
   findFarthestPosition(position: positionType, direction: directionType): farthestPositionType {
@@ -195,69 +213,52 @@ export class Game2048 {
       item: null,
       position: null
     }
+    let isItemFound = false
+    let isEndFound = false
+    
+    const checkPosition = (pos: positionType) => {
+      const el = this.matrix[pos.row][pos.col]
+
+      if (isEndFound) {
+        return
+      }
+      
+      if (this.isItem(el)) {
+        if (!isItemFound) {
+          itemData.item = el as HTMLDivElement
+          itemData.position = pos
+          isItemFound = true
+        } else {
+          isEndFound = true
+        }
+      } else {
+        emptyBlockPosition = pos
+      }
+    }
 
     if (direction === 'top') {
       for (let i = position.row - 1; i >= 0; i--) {
-        const el = this.matrix[i][position.col]
+        const pos = {row: i, col: position.col}
 
-        if (this.isItem(el)) {
-          itemData.item = el as HTMLDivElement
-          itemData.position = {row: i, col: position.col}
-          break
-        } else {
-          emptyBlockPosition = {
-            row: i,
-            col: position.col
-          }
-        }
+        checkPosition(pos)
       }
     } else if (direction === 'right') {
       for (let i = position.col + 1; i < 4; i++) {
-        const el = this.matrix[position.row][i]
+        const pos = {row: position.row, col: i}
 
-        if (this.isItem(el)) {
-          itemData.item = el as HTMLDivElement
-          itemData.position = {row: position.row, col: i}
-          break
-        } else {
-          emptyBlockPosition = {
-            row: position.row,
-            col: i
-          }
-        }
+        checkPosition(pos)
       }
     } else if (direction === 'left') {
       for (let i = position.col - 1; i >= 0; i--) {
-        const el = this.matrix[position.row][i]
+        const pos = {row: position.row, col: i}
 
-        if (this.isItem(el)) {
-          itemData.item = el as HTMLDivElement
-          itemData.position = {row: position.row, col: i}
-          break
-        } else {
-          emptyBlockPosition = {
-            row: position.row,
-            col: i
-          }
-        }
+        checkPosition(pos)
       }
     } else if (direction === 'bottom') {
       for (let i = position.row + 1; i < 4; i++) {
-        const el = this.matrix[i][position.col]
+        const pos = {row: i, col: position.col}
 
-        if (this.isItem(el)) {
-          itemData.item = el as HTMLDivElement
-          itemData.position = {
-            row: i, 
-            col: position.col
-          }
-          break
-        } else {
-          emptyBlockPosition = {
-            row: i,
-            col: position.col
-          }
-        }
+        checkPosition(pos)
       }
     }
 
@@ -265,11 +266,6 @@ export class Game2048 {
       emptyBlockPosition,
       itemData
     }
-  }
-
-  removeCube(item: HTMLDivElement, position: positionType) {
-    item && item.remove()
-    this.matrix[position.row][position.col] = null
   }
 
   async nextTick(direction: directionType) {
@@ -281,7 +277,6 @@ export class Game2048 {
         emptyBlockPosition,
         itemData
       } = this.findFarthestPosition(position, direction)
-      console.log(item)
 
       if (itemData.item && itemData.position) {
         const elValue = itemData.item.dataset.value
@@ -291,7 +286,6 @@ export class Game2048 {
 
         if (!isElDisabled && !isItemDisabled && elValue && itemValue && elValue === itemValue) {
           isAnyCubeMoves = true
-          this.moveCube(item as HTMLDivElement, position, itemData.position, true)
           // @ts-ignore
           this.unionCubes(itemData, {
               item,
