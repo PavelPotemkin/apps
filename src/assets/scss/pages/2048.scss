@@ -38,8 +38,6 @@ $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
     border-radius: $border-radius;
     
     &-inner {
-      animation-name: new-cube;
-      animation-duration: 300ms;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -60,8 +58,14 @@ $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
       }
     }
 
-    &--init {
-      transform: scale(1);
+    &--new {
+      animation-name: new-cube;
+      animation-duration: 300ms;
+    }
+
+    &--union {
+      animation-name: union-cube;
+      animation-duration: 300ms;
     }
   }
 
@@ -87,6 +91,20 @@ $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
   }
 
   to {
+    transform: scale(1);
+  }
+}
+
+@keyframes union-cube {
+  0% {
+    transform: scale(1);
+  }
+  
+  50% {
+    transform: scale(1.2);
+  }
+  
+  100% {
     transform: scale(1);
   }
 }
