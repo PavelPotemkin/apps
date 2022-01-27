@@ -1,16 +1,13 @@
 import {randomNum} from "@/utils/randomNum";
 import throttle from "lodash/throttle";
 
-const matrixInitData = [
-  [11, 12, 13, 14],
-  [21, 22, 23, 24],
-  [31, 32, 33, 34],
-  [41, 42, 43, 44],
-]
+const itemAnimationMoveTime = 100
 
-const itemAnimationMoveTime = 300
+type positionType = { row: number, col: number }
 
-type itemType = {
+type directionType = 'top' | 'right' | 'bottom' | 'left'
+
+interface itemType {
   element: HTMLDivElement,
   position: positionType,
   value: number,
@@ -19,22 +16,9 @@ type itemType = {
 
 type matrixItemType = itemType | null
 
-type positionType = { row: number, col: number }
-
-type directionType = 'top' | 'right' | 'bottom' | 'left'
-
-interface farthestPositionType {
-  emptyBlockPosition: positionType | null,
-  itemData: farthestPositionItemDataType
-}
-
-type farthestPositionItemDataType = {
-  item: HTMLDivElement | null
-  position: positionType | null
-}
-
 type optionsType = {
   onScoreUpdate?: (score: number) => void,
+  onGameEnd?: (score: number) => void,
   length?: number
 }
 
@@ -46,6 +30,7 @@ export class Game2048 {
   private readonly keysEventListener: OmitThisParameter<(event: KeyboardEvent) => void>
   private readonly length: number
   private readonly onScoreUpdate?: (score: number) => void
+  private readonly onGameEnd?: (score: number) => void
 
   constructor(el: HTMLElement, options: optionsType) {
     this.el = el
@@ -53,6 +38,7 @@ export class Game2048 {
     this.length = options.length || 4
     this.matrix = Game2048.createMatrix(this.length)
     this.onScoreUpdate = options.onScoreUpdate
+    this.onGameEnd = options.onGameEnd
 
     const itemsEl = el.querySelector('.game-2048__items')
 
@@ -75,13 +61,13 @@ export class Game2048 {
     return matrix
   }
 
-  resetGame() {
+  resetGame(): void {
     this.itemsEl.innerHTML = ''
     this.matrix = Game2048.createMatrix(this.length)
     this.score = 0
   }
 
-  startGame() {
+  startGame(): void {
     this.resetGame()
 
     document.addEventListener('keydown', this.keysEventListener)
@@ -90,11 +76,13 @@ export class Game2048 {
     this.createRandomCube()
   }
 
-  stopGame() {
+  stopGame(): void {
     document.removeEventListener('keydown', this.keysEventListener)
+
+    this.onGameEnd && this.onGameEnd(this.score)
   }
 
-  keysListener(event: KeyboardEvent) {
+  keysListener(event: KeyboardEvent): void {
     const code = event.code
 
     if (['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'].includes(code)) {
@@ -142,7 +130,7 @@ export class Game2048 {
     }
   }
 
-  createElement(cube: HTMLDivElement) {
+  createElement(cube: HTMLDivElement): void {
     this.itemsEl.append(cube)
     setTimeout(() => {
       cube.firstElementChild!.classList.remove('game-2048__cube--new')
@@ -158,14 +146,14 @@ export class Game2048 {
     const elementInner = document.createElement('div');
     element.classList.add('game-2048__cube', `game-2048__cube--p-${position.row}-${position.col}`)
     element.setAttribute('data-value', String(value))
-    elementInner.classList.add('game-2048__cube', 'game-2048__cube-inner', 'game-2048__cube--new', 'game-2048__cube--orange')
+    elementInner.classList.add('game-2048__cube', 'game-2048__cube-inner', 'game-2048__cube--new')
     elementInner.innerText = String(value)
     element.append(elementInner)
 
     return element
   }
 
-  createRandomCube() {
+  createRandomCube(): itemType['element'] | undefined {
     const pos = this.getRandomEmptyCubePosition()
     if (!pos) {
       this.stopGame();
@@ -179,19 +167,22 @@ export class Game2048 {
       value: value
     }
     this.createElement(cube)
+    
+    return cube
   }
 
-  updateScore(score: number) {
+  updateScore(score: number): void {
     this.score += score
 
     this.onScoreUpdate && this.onScoreUpdate(this.score)
   }
 
-  handleAction(direction: directionType) {
+  handleAction(direction: directionType): void {
     const length = this.length
     let farthestPositions: positionType[] = []
     let nearestItem: matrixItemType | null = null
     let isAnyItemMoved = false
+    let hasVars = false
 
     const removeCube = (pos: positionType) => {
       this.matrix[pos.row][pos.col] = null
@@ -233,10 +224,14 @@ export class Game2048 {
       }, itemAnimationMoveTime)
     }
 
-    const processItem = (item: matrixItemType, pos: positionType) => {
+    const processItem = (item: matrixItemType, pos: positionType, onlyCheck = false) => {
       if (item) {
         if (nearestItem) {
           if (item.value === nearestItem.value) {
+            if (onlyCheck) {
+              hasVars = true
+              return;
+            }
             const newValue = item.value * 2
             moveElement(item, item.position, nearestItem.position)
             removeElement(nearestItem)
@@ -250,6 +245,10 @@ export class Game2048 {
             isAnyItemMoved = true
           } else {
             if (farthestPositions.length) {
+              if (onlyCheck) {
+                hasVars = true
+                return;
+              }
               item.position = farthestPositions[0]
               moveCube(item, pos, item.position)
               moveElement(item, pos, item.position)
@@ -261,6 +260,10 @@ export class Game2048 {
             nearestItem = item
           }
         } else if (farthestPositions.length) {
+          if (onlyCheck) {
+            hasVars = true
+            return;
+          }
           item.position = farthestPositions[0]
           moveCube(item, pos, item.position)
           moveElement(item, pos, item.position)
@@ -275,49 +278,63 @@ export class Game2048 {
         farthestPositions.push(pos)
       }
     }
-
-    if (direction === 'top') {
-      for (let col = 0; col < length; col++) {
-        farthestPositions = []
-        nearestItem = null
-
-        for (let row = 0; row < length; row++) {
-          processItem(this.matrix[row][col], {row, col})
-        }
-      }
-    } else if (direction === 'right') {
-      for (let row = length - 1; row >= 0; row--) {
-        farthestPositions = []
-        nearestItem = null
-
-        for (let col = length - 1; col >= 0; col--) {
-          processItem(this.matrix[row][col], {row, col})
-        }
-      }
-    } else if (direction === 'bottom') {
-      for (let col = length - 1; col >= 0; col--) {
-        farthestPositions = []
-        nearestItem = null
-
-        for (let row = length - 1; row >= 0; row--) {
-          processItem(this.matrix[row][col], {row, col})
-        }
-      }
-    } else if (direction === 'left') {
-      for (let row = 0; row < length; row++) {
-        farthestPositions = []
-        nearestItem = null
-
+    
+    const processDirection = (direction: directionType, onlyCheck = false) => {
+      if (direction === 'top') {
         for (let col = 0; col < length; col++) {
-          processItem(this.matrix[row][col], {row, col})
+          farthestPositions = []
+          nearestItem = null
+
+          for (let row = 0; row < length; row++) {
+            processItem(this.matrix[row][col], {row, col}, onlyCheck)
+          }
+        }
+      } else if (direction === 'right') {
+        for (let row = length - 1; row >= 0; row--) {
+          farthestPositions = []
+          nearestItem = null
+
+          for (let col = length - 1; col >= 0; col--) {
+            processItem(this.matrix[row][col], {row, col}, onlyCheck)
+          }
+        }
+      } else if (direction === 'bottom') {
+        for (let col = length - 1; col >= 0; col--) {
+          farthestPositions = []
+          nearestItem = null
+
+          for (let row = length - 1; row >= 0; row--) {
+            processItem(this.matrix[row][col], {row, col}, onlyCheck)
+          }
+        }
+      } else if (direction === 'left') {
+        for (let row = 0; row < length; row++) {
+          farthestPositions = []
+          nearestItem = null
+
+          for (let col = 0; col < length; col++) {
+            processItem(this.matrix[row][col], {row, col}, onlyCheck)
+          }
         }
       }
     }
+
+    processDirection(direction)
 
     if (isAnyItemMoved) {
       setTimeout(() => {
         this.createRandomCube()
       }, itemAnimationMoveTime)
+    } else {
+      const directions: directionType[] = ['bottom', 'left', 'top', 'right'].filter(item => item !== direction) as directionType[]
+      
+      directions.forEach(item => {
+        processDirection(item, true)
+      })
+
+      if (!hasVars) {
+        this.stopGame()
+      }
     }
   }
 }
