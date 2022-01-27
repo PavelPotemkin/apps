@@ -12,7 +12,7 @@ const itemAnimationMoveTime = 300
 
 type itemType = HTMLDivElement
 
-type matrixItemType = HTMLDivElement | number
+type matrixItemType = HTMLDivElement | null
 
 type positionType = { row: number, col: number }
 
@@ -64,7 +64,7 @@ export class Game2048 {
     const matrix = []
 
     for (let i = 0; i < length; i++) {
-      matrix[i] = new Array(length)
+      matrix[i] = new Array(length).fill(null)
     }
 
     return matrix
@@ -115,22 +115,25 @@ export class Game2048 {
   }
 
   getRandomEmptyCubePosition(): undefined | positionType {
-    const notEmptyRows = this.matrix.filter(row => row.find(item => !this.isItem(item)))
-    if (!notEmptyRows.length) {
-      return
+    const vars = []
+    
+    for (let i = 0; i < this.length; i++) {
+      for (let a = 0; a < this.length; a++) {
+        if (!this.matrix[i][a]) {
+          vars.push([i, a])
+        } 
+      }
     }
-    const row = randomNum(0, notEmptyRows.length - 1)
-    const notEmptyCols = notEmptyRows[row].filter(row => !this.isItem(row))
-    if (!notEmptyCols.length) {
-      return
+    
+    if (!vars.length) {
+      return 
     }
-    const col = randomNum(0, notEmptyCols.length - 1)
-    const item = notEmptyCols[col]
-
-    if (!this.isItem(item)) {
-      return this.getPositionFromMatrixItem(item as number)
-    } else {
-      return
+    
+    const [row, col] = vars[randomNum(0, vars.length - 1)]
+    
+    return {
+      row,
+      col
     }
   }
 
@@ -161,7 +164,7 @@ export class Game2048 {
   moveCube(item: HTMLDivElement, position: positionType, emptyBlockPosition: positionType, onlyInterface: boolean = false) {
     if (!onlyInterface) {
       this.matrix[emptyBlockPosition.row][emptyBlockPosition.col] = item
-      this.matrix[position.row][position.col] = this.getMatrixItemFromPosition(position)
+      this.matrix[position.row][position.col] = null
     }
 
     item.classList.remove(`game-2048__cube--p-${position.row}-${position.col}`)
@@ -202,7 +205,10 @@ export class Game2048 {
           itemData.position = {row: i, col: position.col}
           break
         } else {
-          emptyBlockPosition = this.getPositionFromMatrixItem(el as number)
+          emptyBlockPosition = {
+            row: i,
+            col: position.col
+          }
         }
       }
     } else if (direction === 'right') {
@@ -214,7 +220,10 @@ export class Game2048 {
           itemData.position = {row: position.row, col: i}
           break
         } else {
-          emptyBlockPosition = this.getPositionFromMatrixItem(el as number)
+          emptyBlockPosition = {
+            row: position.row,
+            col: i
+          }
         }
       }
     } else if (direction === 'left') {
@@ -226,7 +235,10 @@ export class Game2048 {
           itemData.position = {row: position.row, col: i}
           break
         } else {
-          emptyBlockPosition = this.getPositionFromMatrixItem(el as number)
+          emptyBlockPosition = {
+            row: position.row,
+            col: i
+          }
         }
       }
     } else if (direction === 'bottom') {
@@ -235,10 +247,16 @@ export class Game2048 {
 
         if (this.isItem(el)) {
           itemData.item = el as HTMLDivElement
-          itemData.position = {row: i, col: position.col}
+          itemData.position = {
+            row: i, 
+            col: position.col
+          }
           break
         } else {
-          emptyBlockPosition = this.getPositionFromMatrixItem(el as number)
+          emptyBlockPosition = {
+            row: i,
+            col: position.col
+          }
         }
       }
     }
@@ -249,22 +267,13 @@ export class Game2048 {
     }
   }
 
-  getPositionFromMatrixItem(number: number): positionType {
-    const [row, col] = String(number).split('').map(item => +item - 1)
-
-    return {row, col}
-  }
-
-  getMatrixItemFromPosition(position: positionType): number {
-    return +(String(position.row + 1) + String(position.col + 1))
-  }
-
   removeCube(item: HTMLDivElement, position: positionType) {
     item && item.remove()
-    this.matrix[position.row][position.col] = this.getMatrixItemFromPosition(position)
+    this.matrix[position.row][position.col] = null
   }
 
   async nextTick(direction: directionType) {
+    const length = this.length
     let isAnyCubeMoves = false
 
     const nextTick = (item: itemType, position: positionType) => {
@@ -272,6 +281,7 @@ export class Game2048 {
         emptyBlockPosition,
         itemData
       } = this.findFarthestPosition(position, direction)
+      console.log(item)
 
       if (itemData.item && itemData.position) {
         const elValue = itemData.item.dataset.value
@@ -300,62 +310,54 @@ export class Game2048 {
     }
 
     if (direction === 'top') {
-      for (let row = 0; row < 4; row++) {
-        for (let col = 0; col < 4; col++) {
+      for (let row = 0; row < length; row++) {
+        for (let col = 0; col < length; col++) {
           const item = this.matrix[row][col]
 
           if (this.isItem(item)) {
-            const position: positionType = {
+            nextTick(item as HTMLDivElement, {
               row,
               col
-            }
-
-            nextTick(item as HTMLDivElement, position)
+            })
           }
         }
       }
     } else if (direction === 'right') {
-      for (let col = 3; col >= 0; col--) {
-        for (let row = 0; row < 4; row++) {
+      for (let col = length - 1; col >= 0; col--) {
+        for (let row = 0; row < length; row++) {
           const item = this.matrix[row][col]
 
           if (this.isItem(item)) {
-            const position: positionType = {
+            nextTick(item as HTMLDivElement, {
               row,
               col
-            }
-
-            nextTick(item as HTMLDivElement, position)
+            })
           }
         }
       }
     } else if (direction === 'bottom') {
-      for (let row = 3; row > 0; row--) {
-        for (let col = 0; col < 4; col++) {
+      for (let row = length - 1; row >= 0; row--) {
+        for (let col = 0; col < length; col++) {
           const item = this.matrix[row][col]
 
           if (this.isItem(item)) {
-            const position: positionType = {
+            nextTick(item as HTMLDivElement, {
               row,
               col
-            }
-
-            nextTick(item as HTMLDivElement, position)
+            })
           }
         }
       }
     } else if (direction === 'left') {
-      for (let col = 0; col < 4; col++) {
-        for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < length; col++) {
+        for (let row = 0; row < length; row++) {
           const item = this.matrix[row][col]
 
           if (this.isItem(item)) {
-            const position: positionType = {
+            nextTick(item as HTMLDivElement, {
               row,
               col
-            }
-
-            nextTick(item as HTMLDivElement, position)
+            })
           }
         }
       }
@@ -385,6 +387,6 @@ export class Game2048 {
   }
 
   isItem(item: matrixItemType): boolean {
-    return typeof item !== 'number';
+    return item !== null;
   }
 }
