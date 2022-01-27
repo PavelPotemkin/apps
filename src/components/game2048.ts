@@ -86,38 +86,8 @@ export class Game2048 {
 
     document.addEventListener('keydown', this.keysEventListener)
 
-    // this.createRandomCube()
-    // this.createRandomCube()
-
-    const pos = {row: 0, col: 1}
-    const value = 2
-    const cube = this.createCube(pos, value)
-    this.matrix[pos.row][pos.col] = {
-      element: cube,
-      position: pos,
-      value: value
-    }
-    this.createElement(cube)
-
-    const pos1 = {row: 0, col: 2}
-    const value1 = 2
-    const cube1 = this.createCube(pos1, value1)
-    this.matrix[pos1.row][pos1.col] = {
-      element: cube1,
-      position: pos1,
-      value: value1
-    }
-    this.createElement(cube1)
-
-    const pos2 = {row: 0, col: 3}
-    const value2 = 2
-    const cube2 = this.createCube(pos2, value2)
-    this.matrix[pos2.row][pos2.col] = {
-      element: cube2,
-      position: pos2,
-      value: value2
-    }
-    this.createElement(cube2)
+    this.createRandomCube()
+    this.createRandomCube()
   }
 
   stopGame() {
@@ -345,7 +315,9 @@ export class Game2048 {
     }
 
     if (isAnyItemMoved) {
-      this.createRandomCube()
+      setTimeout(() => {
+        this.createRandomCube()
+      }, itemAnimationMoveTime)
     }
   }
 }
