@@ -1,0 +1,92 @@
+$border-radius: 4px;
+$spacing: 10px;
+
+$colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
+
+.page-2048 {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.game-2048 {
+  background: grey;
+  position: relative;
+
+  &__inner {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: $spacing;
+    aspect-ratio: 1;
+    padding: $spacing;
+    border-radius: $border-radius;
+  }
+  
+  &__btn {
+    padding: 12px 24px;
+    background: darkgrey;
+    border-radius: 3px;
+    font-size: 20px;
+  }
+  
+  &__cube {
+    width: 100px;
+    height: 100px;
+    border-radius: $border-radius;
+    
+    &-inner {
+      animation-name: new-cube;
+      animation-duration: 300ms;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 34px;
+    }
+
+    @each $color in $colors {
+      &--#{$color} {
+        background-color: #{$color};
+      }
+    }
+
+    @for $row from 0 to 4 {
+      @for $col from 0 to 4 {
+        &--p-#{$row}-#{$col} {
+          transform: translateY(calc(#{$row} * 110px)) translateX(calc(#{$col} * 110px)) ;
+        }
+      }
+    }
+
+    &--init {
+      transform: scale(1);
+    }
+  }
+
+  &__items {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: $spacing;
+
+    & .game-2048__cube {
+      position: absolute;
+      top: 0;
+      transition: transform 300ms;
+    }
+  }
+}
+
+@keyframes new-cube {
+  from {
+    transform: scale(0);
+  }
+
+  to {
+    transform: scale(1);
+  }
+}

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>2048</title>
+</head>
+<body>
+{{> layouts/header }}
+
+<!-- SVG-спрайт -->
+<div class="d-none">
+  {{ svg-sprite-inject compilation }}
+</div>
+
+<div class="container page-2048">
+  <div class="d-flex align-items-center" style="gap: 16px">
+    <button class="game-2048__btn" id="game-2048-start">
+      Start game
+    </button>
+    
+    <div id="game-2048-score" class="h4 mb-0"></div>
+  </div>
+
+  <div class="game-2048" id="game-2048">
+    <div class="game-2048__inner">
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+      <div class="game-2048__cube game-2048__cube--darkgrey"></div>
+    </div>
+
+    <div class="game-2048__items">
+    </div>
+  </div>
+</div>
+
+{{> layouts/footer }}
+</body>
+</html>

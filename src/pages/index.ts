@@ -1,5 +1,3 @@
-import '@/vue/index'
-
 function init () {
   console.log('init')
 }
