@@ -18,6 +18,7 @@ type matrixItemType = itemType | null
 type optionsType = {
   onScoreUpdate?: (score: number) => void,
   onGameEnd?: (score: number) => void,
+  onGameBreak?: (data: (matrixItemType)[][]) => void,
   length?: number,
   newCubesCount?: number
 }
@@ -34,12 +35,13 @@ export class Game2048 {
   private readonly newCubesCount: number
   private readonly onScoreUpdate?: (score: number) => void
   private readonly onGameEnd?: (score: number) => void
+  private readonly onGameBreak?: (data: (matrixItemType)[][]) => void
 
   constructor(el: HTMLElement, options: optionsType) {
     this.el = el
     this.score = 0
 
-    options = Object.assign({length: 4, newCubesCount: 2}, options)
+    options = Object.assign({length: 4, newCubesCount: 4}, options)
 
     if (
       options.length &&
@@ -65,6 +67,7 @@ export class Game2048 {
     this.isGameStart = false
     this.onScoreUpdate = options.onScoreUpdate
     this.onGameEnd = options.onGameEnd
+    this.onGameBreak = options.onGameBreak
 
     const itemsEl = el.querySelector('.game-2048__items') as HTMLElement
     const innerEl = el.querySelector('.game-2048__inner') as HTMLElement
@@ -86,30 +89,6 @@ export class Game2048 {
     this.keysEventListener = throttle(this.keysListener.bind(this), itemAnimationMoveTime)
 
     window.addEventListener('unload', () => this.breakGame())
-
-    let brokenData: any = localStorage.getItem('game-2048-broken')
-
-    if (brokenData) {
-      brokenData = JSON.parse(brokenData)
-      const length = brokenData.length
-
-      for (let row = 0; row < length; row++) {
-        for (let col = 0; col < length; col++) {
-          const item: itemType = brokenData[row][col]
-
-          if (item) {
-            item.element = Game2048.createCubeElement(item.position, item.value)
-            this.insertCubeElement(item.element)
-          }
-        }
-      }
-
-      this.matrix = brokenData
-
-      this.isGameStart = true
-
-      document.addEventListener('keydown', this.keysEventListener)
-    }
   }
 
   static createMatrix(length: number): matrixItemType[][] {
@@ -133,7 +112,28 @@ export class Game2048 {
 
     return element
   }
+  
+  setData(data: (matrixItemType)[][]) {
+    const length = data.length
 
+    for (let row = 0; row < length; row++) {
+      for (let col = 0; col < length; col++) {
+        const item: matrixItemType = data[row][col]
+
+        if (item) {
+          item.element = Game2048.createCubeElement(item.position, item.value)
+          this.insertCubeElement(item.element)
+        }
+      }
+    }
+
+    this.matrix = data
+
+    this.isGameStart = true
+
+    document.addEventListener('keydown', this.keysEventListener)
+  }
+  
   fillCubesInner() {
     this.innerEl.style.gridTemplateColumns = `repeat(${this.length}, 1fr)`
 
@@ -203,21 +203,22 @@ export class Game2048 {
   startGame(): void {
     this.isGameStart = true
     this.resetGame()
-
     document.addEventListener('keydown', this.keysEventListener)
-
     this.createRandomCubes()
   }
 
   stopGame(): void {
     document.removeEventListener('keydown', this.keysEventListener)
-
-    !this.isGameStart && this.onGameEnd && this.score && this.onGameEnd(this.score)
+    if (this.isGameStart && this.onGameEnd) {
+      this.onGameEnd(this.score)
+    }
     this.isGameStart = false
   }
 
   breakGame(): void {
-    this.isGameStart && localStorage.setItem('game-2048-broken', JSON.stringify(this.matrix))
+    if (this.isGameStart && this.onGameBreak) {
+      this.onGameBreak(this.matrix)
+    }
   }
 
   updateScore(score: number): void {
@@ -425,6 +426,8 @@ export class Game2048 {
           checkEndGame()
         }, itemAnimationMoveTime)
       }
+    } else {
+      checkEndGame()
     }
   }
 }

@@ -37,6 +37,10 @@ function init() {
     updateRecordsTable()
   }
 
+  const onGameBreak = (matrix: any) => {
+    localStorage.setItem('game-2048-saves', JSON.stringify(matrix))
+  }
+
   const updateRecordsTable = () => {
     let inner = ''
 
@@ -47,9 +51,15 @@ function init() {
     resultsWrapper.innerHTML = inner
   }
 
-  const game = new Game2048(gameWrapper, {onScoreUpdate, onGameEnd})
+  const game = new Game2048(gameWrapper, {onScoreUpdate, onGameEnd, onGameBreak})
 
   const startBtn = document.getElementById('game-2048-start')
+  
+  const gameSaves = localStorage.getItem('game-2048-saves')
+  
+  if (gameSaves) {
+    game.setData(JSON.parse(gameSaves))
+  }
 
   startBtn?.addEventListener('click', game.startGame.bind(game))
 
