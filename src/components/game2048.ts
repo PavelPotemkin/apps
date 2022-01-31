@@ -23,7 +23,8 @@ type optionsType = {
 
 export class Game2048 {
   private el: HTMLElement
-  private itemsEl: Element
+  private itemsEl: HTMLElement
+  private innerEl: HTMLElement
   private matrix: (matrixItemType)[][]
   private score: number
   private isGameStart: boolean
@@ -41,7 +42,8 @@ export class Game2048 {
     this.onScoreUpdate = options.onScoreUpdate
     this.onGameEnd = options.onGameEnd
 
-    const itemsEl = el.querySelector('.game-2048__items')
+    const itemsEl = el.querySelector('.game-2048__items') as HTMLElement
+    const innerEl = el.querySelector('.game-2048__inner') as HTMLElement
 
     if (itemsEl) {
       this.itemsEl = itemsEl
@@ -49,12 +51,20 @@ export class Game2048 {
       throw new Error('нет обёртки элементов')
     }
 
+    if (innerEl) {
+      this.innerEl = innerEl
+    } else {
+      throw new Error('нет обёртки элементов')
+    }
+    
+    this.fillCubesInner()
+
     this.keysEventListener = throttle(this.keysListener.bind(this), 300)
 
     window.addEventListener('unload', () => this.breakGame())
-    
+
     let brokenData: any = localStorage.getItem('game-2048-broken')
-    
+
     if (brokenData) {
       brokenData = JSON.parse(brokenData)
       const length = brokenData.length
@@ -62,14 +72,14 @@ export class Game2048 {
       for (let row = 0; row < length; row++) {
         for (let col = 0; col < length; col++) {
           const item: itemType = brokenData[row][col]
-          
+
           if (item) {
             item.element = Game2048.createCubeElement(item.position, item.value)
-            this.createElement(item.element)
+            this.insertCubeElement(item.element)
           }
         }
       }
-      
+
       this.matrix = brokenData
 
       this.isGameStart = true
@@ -100,6 +110,66 @@ export class Game2048 {
     return element
   }
 
+  fillCubesInner() {
+    this.innerEl.style.gridTemplateColumns = `repeat(${this.length}, 1fr)`
+
+    let inner = ''
+    const cubesCount = this.length * this.length
+    
+    for (let i = 0; i < cubesCount; i++) {
+      inner += '<div class="game-2048__cube game-2048__cube--darkgrey"></div>'
+    }
+    
+    this.innerEl.innerHTML = inner
+  }
+
+  removeCubeItem(pos: positionType) {
+    this.matrix[pos.row][pos.col] = null
+  }
+
+  removeCubeElement(item: itemType) {
+    setTimeout(() => {
+      item.element.remove()
+    }, itemAnimationMoveTime)
+  }
+
+  setCubeItem(item: itemType, pos: positionType, value: number) {
+    this.matrix[pos.row][pos.col] = item
+    item.position = pos
+    item.value = value
+  }
+
+  moveCubeItem(item: itemType, posFrom: positionType, posTo: positionType) {
+    this.removeCubeItem(posFrom)
+    this.setCubeItem(item, posTo, item.value)
+  }
+
+  moveCubeElement(item: itemType, posFrom: positionType, posTo: positionType) {
+    item.element.classList.remove(`game-2048__cube--p-${posFrom.row}-${posFrom.col}`)
+    item.element.classList.add(`game-2048__cube--p-${posTo.row}-${posTo.col}`)
+  }
+
+  setCubeElement(item: itemType, value: number) {
+    const element = item.element
+
+    setTimeout(() => {
+      element.dataset.value = String(value)
+      element.firstElementChild!.innerHTML = String(value)
+      element.firstElementChild!.classList.add('game-2048__cube--union')
+
+      setTimeout(() => {
+        element.firstElementChild!.classList.remove('game-2048__cube--union')
+      }, itemAnimationMoveTime)
+    }, itemAnimationMoveTime)
+  }
+
+  insertCubeElement(cube: HTMLDivElement): void {
+    this.itemsEl.append(cube)
+    setTimeout(() => {
+      cube.firstElementChild!.classList.remove('game-2048__cube--new')
+    }, itemAnimationMoveTime)
+  }
+
   resetGame(): void {
     this.itemsEl.innerHTML = ''
     this.matrix = Game2048.createMatrix(this.length)
@@ -120,7 +190,7 @@ export class Game2048 {
     this.isGameStart = false
     document.removeEventListener('keydown', this.keysEventListener)
 
-    this.onGameEnd && this.score &&this.onGameEnd(this.score)
+    this.onGameEnd && this.score && this.onGameEnd(this.score)
   }
 
   breakGame(): void {
@@ -146,6 +216,24 @@ export class Game2048 {
           break
       }
     }
+  }
+
+  createRandomCube(): itemType['element'] | undefined {
+    const pos = this.getRandomEmptyCubePosition()
+    if (!pos) {
+      this.stopGame();
+      return
+    }
+    const value = this.getRandomCubeValue()
+    const cube = Game2048.createCubeElement(pos, value)
+    this.matrix[pos.row][pos.col] = {
+      element: cube,
+      position: pos,
+      value: value
+    }
+    this.insertCubeElement(cube)
+
+    return cube
   }
 
   getRandomCubeValue(): number {
@@ -175,31 +263,6 @@ export class Game2048 {
     }
   }
 
-  createElement(cube: HTMLDivElement): void {
-    this.itemsEl.append(cube)
-    setTimeout(() => {
-      cube.firstElementChild!.classList.remove('game-2048__cube--new')
-    }, itemAnimationMoveTime)
-  }
-
-  createRandomCube(): itemType['element'] | undefined {
-    const pos = this.getRandomEmptyCubePosition()
-    if (!pos) {
-      this.stopGame();
-      return
-    }
-    const value = this.getRandomCubeValue()
-    const cube = Game2048.createCubeElement(pos, value)
-    this.matrix[pos.row][pos.col] = {
-      element: cube,
-      position: pos,
-      value: value
-    }
-    this.createElement(cube)
-    
-    return cube
-  }
-
   updateScore(score: number): void {
     this.score += score
 
@@ -213,46 +276,6 @@ export class Game2048 {
     let isAnyItemMoved = false
     let hasVars = false
 
-    const removeCubeItem = (pos: positionType) => {
-      this.matrix[pos.row][pos.col] = null
-    }
-
-    const removeCubeElement = (item: itemType) => {
-      setTimeout(() => {
-        item.element.remove()
-      }, itemAnimationMoveTime)
-    }
-
-    const setCubeItem = (item: itemType, pos: positionType, value: number) => {
-      this.matrix[pos.row][pos.col] = item
-      item.position = pos
-      item.value = value
-    }
-
-    const moveCubeItem = (item: itemType, posFrom: positionType, posTo: positionType) => {
-      removeCubeItem(posFrom)
-      setCubeItem(item, posTo, item.value)
-    }
-
-    const moveCubeElement = (item: itemType, posFrom: positionType, posTo: positionType) => {
-      item.element.classList.remove(`game-2048__cube--p-${posFrom.row}-${posFrom.col}`)
-      item.element.classList.add(`game-2048__cube--p-${posTo.row}-${posTo.col}`)
-    }
-
-    const setCubeElement = (item: itemType, value: number) => {
-      const element = item.element
-
-      setTimeout(() => {
-        element.dataset.value = String(value)
-        element.firstElementChild!.innerHTML = String(value)
-        element.firstElementChild!.classList.add('game-2048__cube--union')
-
-        setTimeout(() => {
-          element.firstElementChild!.classList.remove('game-2048__cube--union')
-        }, itemAnimationMoveTime)
-      }, itemAnimationMoveTime)
-    }
-
     const processItem = (item: matrixItemType, pos: positionType, onlyCheck = false) => {
       if (item) {
         if (nearestItem) {
@@ -262,12 +285,12 @@ export class Game2048 {
               return;
             }
             const newValue = item.value * 2
-            moveCubeElement(item, item.position, nearestItem.position)
-            removeCubeElement(nearestItem)
-            setCubeElement(item, newValue)
-            removeCubeItem(item.position)
-            removeCubeItem(nearestItem.position)
-            setCubeItem(item, nearestItem.position, newValue)
+            this.moveCubeElement(item, item.position, nearestItem.position)
+            this.removeCubeElement(nearestItem)
+            this.setCubeElement(item, newValue)
+            this.removeCubeItem(item.position)
+            this.removeCubeItem(nearestItem.position)
+            this.setCubeItem(item, nearestItem.position, newValue)
             this.updateScore(newValue)
             farthestPositions.push(pos)
             nearestItem = null
@@ -279,8 +302,8 @@ export class Game2048 {
                 return;
               }
               item.position = farthestPositions[0]
-              moveCubeItem(item, pos, item.position)
-              moveCubeElement(item, pos, item.position)
+              this.moveCubeItem(item, pos, item.position)
+              this.moveCubeElement(item, pos, item.position)
               farthestPositions.shift()
               farthestPositions.push(pos)
               isAnyItemMoved = true
@@ -294,8 +317,8 @@ export class Game2048 {
             return;
           }
           item.position = farthestPositions[0]
-          moveCubeItem(item, pos, item.position)
-          moveCubeElement(item, pos, item.position)
+          this.moveCubeItem(item, pos, item.position)
+          this.moveCubeElement(item, pos, item.position)
           farthestPositions.shift()
           farthestPositions.push(pos)
           nearestItem = item
@@ -307,7 +330,7 @@ export class Game2048 {
         farthestPositions.push(pos)
       }
     }
-    
+
     const processDirection = (direction: directionType, onlyCheck = false) => {
       if (direction === 'top') {
         for (let col = 0; col < length; col++) {
@@ -356,7 +379,7 @@ export class Game2048 {
       }, itemAnimationMoveTime)
     } else {
       const directions: directionType[] = ['bottom', 'left', 'top', 'right'].filter(item => item !== direction) as directionType[]
-      
+
       directions.forEach(item => {
         processDirection(item, true)
       })
