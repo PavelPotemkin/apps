@@ -40,7 +40,8 @@ const entry = {
 glob.sync('**/*.ts', {
   cwd: path.resolve(paths.src, 'pages')
 }).forEach(file => {
-  const chunkName = file.split('.')[0]
+  let chunkName = file.split('.')[0]
+  chunkName = chunkName.split('/').join('.')
 
   entry[chunkName] = path.resolve(paths.src, 'pages', file)
 })
@@ -88,7 +89,7 @@ const config = {
     proxy: {
       '/api': {
         target: 'http://localhost:5000',
-        pathRewrite: { '^/api': '' },
+        pathRewrite: {'^/api': ''},
       },
     },
     devMiddleware: {
@@ -254,16 +255,20 @@ const config = {
     ...glob.sync('**/*.hbs', {
       cwd: path.resolve(paths.html, 'views'),
       nodir: true
-    }).map(file => new HtmlWebpackPlugin({
-      filename: file.replace('.hbs', '.html'),
-      template: path.resolve(paths.html, 'views', file),
-      data: hbsData,
-      chunks: [file.split('.')[0], 'main'],
-      minify: {
-        removeComments: true,
-        collapseWhitespace: true
-      }
-    })),
+    }).map(file => {
+      const chunkName = file.split('.')[0].split('/').join('.')
+
+      return new HtmlWebpackPlugin({
+        filename: file.replace('.hbs', '.html'),
+        template: path.resolve(paths.html, 'views', file),
+        data: hbsData,
+        chunks: [chunkName, 'main'],
+        minify: {
+          removeComments: true,
+          collapseWhitespace: true
+        }
+      })
+    }),
   ],
   performance: {
     hints: false,
@@ -315,9 +320,9 @@ const config = {
           implementation: ImageMinimizerPlugin.imageminMinify,
           options: {
             plugins: [
-              ["gifsicle", { interlaced: true }],
-              ["jpegtran", { progressive: true }],
-              ["optipng", { optimizationLevel: 5 }],
+              ["gifsicle", {interlaced: true}],
+              ["jpegtran", {progressive: true}],
+              ["optipng", {optimizationLevel: 5}],
               [
                 "svgo",
                 {
@@ -335,7 +340,7 @@ const config = {
           test: /[\\/]node_modules[\\/]/,
           chunks: 'all',
           priority: -20,
-          name (module) {
+          name(module) {
             const package = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/)
 
             return package ? `vendor.${package[1].replace('@', '')}` : ''
