@@ -19,7 +19,7 @@ type optionsType = {
   onScoreUpdate?: (score: number) => void,
   onGameEnd?: (score: number) => void,
   length?: number,
-  newCubesCount? :number
+  newCubesCount?: number
 }
 
 export class Game2048 {
@@ -38,9 +38,9 @@ export class Game2048 {
   constructor(el: HTMLElement, options: optionsType) {
     this.el = el
     this.score = 0
-    
+
     options = Object.assign({length: 4, newCubesCount: 2}, options)
-    
+
     if (
       options.length &&
       !Number.isNaN(options.length) &&
@@ -52,7 +52,7 @@ export class Game2048 {
     }
 
     if (
-      options.newCubesCount && 
+      options.newCubesCount &&
       !Number.isNaN(options.newCubesCount) &&
       options.newCubesCount > 0
     ) {
@@ -60,7 +60,7 @@ export class Game2048 {
     } else {
       throw new Error('Неверное количество новых элементов')
     }
-    
+
     this.matrix = Game2048.createMatrix(this.length)
     this.isGameStart = false
     this.onScoreUpdate = options.onScoreUpdate
@@ -80,7 +80,7 @@ export class Game2048 {
     } else {
       throw new Error('нет обёртки статических элементов')
     }
-    
+
     this.fillCubesInner()
 
     this.keysEventListener = throttle(this.keysListener.bind(this), itemAnimationMoveTime)
@@ -139,11 +139,11 @@ export class Game2048 {
 
     let inner = ''
     const cubesCount = this.length * this.length
-    
+
     for (let i = 0; i < cubesCount; i++) {
       inner += '<div class="game-2048__cube game-2048__cube--darkgrey"></div>'
     }
-    
+
     this.innerEl.innerHTML = inner
   }
 
@@ -205,15 +205,15 @@ export class Game2048 {
     this.resetGame()
 
     document.addEventListener('keydown', this.keysEventListener)
-    
+
     this.createRandomCubes()
   }
 
   stopGame(): void {
-    this.isGameStart = false
     document.removeEventListener('keydown', this.keysEventListener)
 
-    this.onGameEnd && this.score && this.onGameEnd(this.score)
+    !this.isGameStart && this.onGameEnd && this.score && this.onGameEnd(this.score)
+    this.isGameStart = false
   }
 
   breakGame(): void {
@@ -250,7 +250,6 @@ export class Game2048 {
   createRandomCube(): itemType['element'] | undefined {
     const pos = this.getRandomEmptyCubePosition()
     if (!pos) {
-      this.stopGame();
       return
     }
     const value = this.getRandomCubeValue()
@@ -291,7 +290,7 @@ export class Game2048 {
       col
     }
   }
-  
+
   createRandomCubes() {
     for (let i = 0; i < this.newCubesCount; i++) {
       this.createRandomCube()
@@ -402,12 +401,9 @@ export class Game2048 {
 
     processDirection(direction)
 
-    if (isAnyItemMoved) {
-      setTimeout(() => {
-        this.createRandomCubes()
-      }, itemAnimationMoveTime)
-    } else {
-      const directions: directionType[] = ['bottom', 'left', 'top', 'right'].filter(item => item !== direction) as directionType[]
+    const checkEndGame = () => {
+      hasVars = false
+      const directions: directionType[] = ['bottom', 'left', 'top', 'right']
 
       directions.forEach(item => {
         processDirection(item, true)
@@ -415,6 +411,19 @@ export class Game2048 {
 
       if (!hasVars) {
         this.stopGame()
+        return true
+      }
+
+      return false
+    }
+
+    if (isAnyItemMoved) {
+      if (!checkEndGame()) {
+        setTimeout(() => {
+          this.createRandomCubes()
+
+          checkEndGame()
+        }, itemAnimationMoveTime)
       }
     }
   }
