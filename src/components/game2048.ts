@@ -112,7 +112,7 @@ export class Game2048 {
 
     return element
   }
-  
+  // TODO - добавить метод getData и вынести логику с localstorage
   setData(data: (matrixItemType)[][]) {
     const length = data.length
 
