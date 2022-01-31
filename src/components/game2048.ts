@@ -7,7 +7,7 @@ type positionType = { row: number, col: number }
 
 type directionType = 'top' | 'right' | 'bottom' | 'left'
 
-interface itemType {
+type itemType = {
   element: HTMLDivElement,
   position: positionType,
   value: number
@@ -197,6 +197,12 @@ export class Game2048 {
     this.isGameStart && localStorage.setItem('game-2048-broken', JSON.stringify(this.matrix))
   }
 
+  updateScore(score: number): void {
+    this.score += score
+
+    this.onScoreUpdate && this.onScoreUpdate(this.score)
+  }
+
   keysListener(event: KeyboardEvent): void {
     const code = event.code
 
@@ -261,12 +267,6 @@ export class Game2048 {
       row,
       col
     }
-  }
-
-  updateScore(score: number): void {
-    this.score += score
-
-    this.onScoreUpdate && this.onScoreUpdate(this.score)
   }
 
   handleAction(direction: directionType): void {
