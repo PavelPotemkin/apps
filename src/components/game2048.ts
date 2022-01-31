@@ -18,7 +18,8 @@ type matrixItemType = itemType | null
 type optionsType = {
   onScoreUpdate?: (score: number) => void,
   onGameEnd?: (score: number) => void,
-  length?: number
+  length?: number,
+  newCubesCount? :number
 }
 
 export class Game2048 {
@@ -30,13 +31,36 @@ export class Game2048 {
   private isGameStart: boolean
   private readonly keysEventListener: OmitThisParameter<(event: KeyboardEvent) => void>
   private readonly length: number
+  private readonly newCubesCount: number
   private readonly onScoreUpdate?: (score: number) => void
   private readonly onGameEnd?: (score: number) => void
 
   constructor(el: HTMLElement, options: optionsType) {
     this.el = el
     this.score = 0
-    this.length = options.length || 4
+    
+    options = Object.assign({length: 4, newCubesCount: 2}, options)
+    
+    if (
+      options.length &&
+      !Number.isNaN(options.length) &&
+      options.length > 1
+    ) {
+      this.length = options.length
+    } else {
+      throw new Error('Неверная длина матрицы')
+    }
+
+    if (
+      options.newCubesCount && 
+      !Number.isNaN(options.newCubesCount) &&
+      options.newCubesCount > 0
+    ) {
+      this.newCubesCount = options.newCubesCount
+    } else {
+      throw new Error('Неверное количество новых элементов')
+    }
+    
     this.matrix = Game2048.createMatrix(this.length)
     this.isGameStart = false
     this.onScoreUpdate = options.onScoreUpdate
@@ -54,12 +78,12 @@ export class Game2048 {
     if (innerEl) {
       this.innerEl = innerEl
     } else {
-      throw new Error('нет обёртки элементов')
+      throw new Error('нет обёртки статических элементов')
     }
     
     this.fillCubesInner()
 
-    this.keysEventListener = throttle(this.keysListener.bind(this), 300)
+    this.keysEventListener = throttle(this.keysListener.bind(this), itemAnimationMoveTime)
 
     window.addEventListener('unload', () => this.breakGame())
 
@@ -181,9 +205,8 @@ export class Game2048 {
     this.resetGame()
 
     document.addEventListener('keydown', this.keysEventListener)
-
-    this.createRandomCube()
-    this.createRandomCube()
+    
+    this.createRandomCubes()
   }
 
   stopGame(): void {
@@ -266,6 +289,12 @@ export class Game2048 {
     return {
       row,
       col
+    }
+  }
+  
+  createRandomCubes() {
+    for (let i = 0; i < this.newCubesCount; i++) {
+      this.createRandomCube()
     }
   }
 
@@ -375,7 +404,7 @@ export class Game2048 {
 
     if (isAnyItemMoved) {
       setTimeout(() => {
-        this.createRandomCube()
+        this.createRandomCubes()
       }, itemAnimationMoveTime)
     } else {
       const directions: directionType[] = ['bottom', 'left', 'top', 'right'].filter(item => item !== direction) as directionType[]
