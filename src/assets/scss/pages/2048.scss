@@ -1,5 +1,23 @@
+@use "sass:math";
+
 $border-radius: 4px;
 $spacing: 10px;
+
+@function pow($number, $exponent) {
+  $value: 1;
+
+  @if $exponent > 0 {
+    @for $i from 1 through $exponent {
+      $value: $value * $number;
+    }
+  }
+
+  @return $value;
+}
+
+@function randomHex() {
+  @return '#' + math.floor(math.random() * 10) + '' + math.floor(math.random() * 10) + '' + math.floor(math.random() * 10) + '' + math.floor(math.random() * 10) + '' + math.floor(math.random() * 10) + '' + math.floor(math.random() * 10)
+}
 
 $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
 
@@ -14,7 +32,7 @@ $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
 .game-2048 {
   background: grey;
   position: relative;
-  --animation-time: 100ms;
+  --animation-time: 200ms;
 
   &__inner {
     position: relative;
@@ -68,9 +86,13 @@ $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
       animation-name: union-cube;
       animation-duration: var(--animation-time);
     }
-    
-    &[data-value='2'] {
-      background-color: #000;
+
+    $val: 0;  
+    @while $val < 20 {
+      &[data-value='#{pow(2, $val)}'] .game-2048__cube-inner {
+        background-color: #{randomHex()};
+      }
+      $val: $val + 1;
     }
   }
 
