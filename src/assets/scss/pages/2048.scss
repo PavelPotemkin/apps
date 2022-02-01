@@ -1,7 +1,7 @@
 @use "sass:math";
 
 $border-radius: 4px;
-$spacing: 10px;
+$spacing: .5em;
 
 @function pow($number, $exponent) {
   $value: 1;
@@ -51,15 +51,17 @@ $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
   }
   
   &__cube {
-    width: 100px;
-    height: 100px;
+    width: 6em;
+    height: 6em;
     border-radius: $border-radius;
     
     &-inner {
       display: flex;
       justify-content: center;
       align-items: center;
-      font-size: 34px;
+      width: inherit;
+      height: inherit;
+      font-size: 2.5em;
     }
 
     @each $color in $colors {
@@ -71,7 +73,7 @@ $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
     @for $row from 0 to 20 {
       @for $col from 0 to 20 {
         &--p-#{$row}-#{$col} {
-          transform: translateY(calc(#{$row} * 110px)) translateX(calc(#{$col} * 110px)) ;
+          transform: translateY(calc(#{$row} * 6.5em)) translateX(calc(#{$col} * 6.5em)) ;
         }
       }
     }
