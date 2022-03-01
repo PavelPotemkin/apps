@@ -24,6 +24,8 @@ const port = PORT || 8080
 const buildDirectory = isDev ? 'dist' : 'build'
 const useHashInFileNames = false
 
+const publicPath = process.env.NODE_ENV === 'production' ? '/apps/' : '/'
+
 const paths = {
   src: path.resolve(__dirname, 'src'),
   html: path.resolve(__dirname, 'src', 'assets', 'html'),
@@ -75,7 +77,8 @@ const config = {
     filename: (!isDev && useHashInFileNames) ? 'js/[name].[contenthash].bundle.js' : 'js/[name].bundle.js',
     path: paths.build,
     clean: true,
-    chunkFilename: 'js/[name].[contenthash:8].js'
+    chunkFilename: 'js/[name].[contenthash:8].js',
+    publicPath
   },
   cache: {
     type: 'filesystem'
@@ -130,7 +133,7 @@ const config = {
               spriteFilename: useHashInFileNames ? 'sprite.[hash].svg' : 'sprite.svg',
               esModule: false,
               runtimeGenerator: require.resolve(path.resolve(paths.src, 'plugins', 'svg-sprite-generator.js')),
-              publicPath: ''
+              publicPath
             }
           },
           'svgo-loader'
