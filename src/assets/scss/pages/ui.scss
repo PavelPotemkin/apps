@@ -1,0 +1,11 @@
+input[type="radio"]::-ms-check,
+input[type="checkbox"]::-ms-check {
+  background: #c00;
+  color: #fff;
+}
+
+::-ms-check {
+  color: red;
+  background: black;
+  padding: 1em;
+}

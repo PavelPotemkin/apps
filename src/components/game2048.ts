@@ -41,7 +41,7 @@ export class Game2048 {
     this.el = el
     this.score = 0
 
-    options = Object.assign({length: 4, newCubesCount: 4}, options)
+    options = Object.assign({length: 4, newCubesCount: 1}, options)
 
     if (
       options.length &&
@@ -106,7 +106,7 @@ export class Game2048 {
     const elementInner = document.createElement('div');
     element.classList.add('game-2048__cube', `game-2048__cube--p-${position.row}-${position.col}`)
     element.setAttribute('data-value', String(value))
-    elementInner.classList.add('game-2048__cube', 'game-2048__cube-inner', 'game-2048__cube--new')
+    elementInner.classList.add('game-2048__cube-inner', 'game-2048__cube--new')
     elementInner.innerText = String(value)
     element.append(elementInner)
 

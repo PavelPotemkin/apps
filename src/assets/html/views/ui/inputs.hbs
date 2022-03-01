@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>2048</title>
+</head>
+<body>
+{{> layouts/header }}
+
+<!-- SVG-спрайт -->
+<div class="d-none">
+  {{ svg-sprite-inject compilation }}
+</div>
+
+<div class="container d-flex flex-column">
+  <input type="checkbox">
+  <input type="radio">
+  <input type="color">
+  <input type="button">
+  <input type="date">
+  <input type="month">
+  <input type="week">
+  <input type="url">
+  <input type="time">
+  <input type="range">
+  <input type="search">
+  <input type="reset">
+  <input type="tel">
+  <input type="text">
+  <input type="submit">
+  <input type="datetime-local">
+  <input type="email">
+  <input type="file">
+  <input type="image">
+  <input type="password">
+</div>
+
+{{> layouts/footer }}
+</body>
+</html>

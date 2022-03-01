@@ -1,6 +1,6 @@
 @use "sass:math";
 
-$border-radius: 4px;
+$border-radius: .5em;
 $spacing: .5em;
 
 @function pow($number, $exponent) {
@@ -54,6 +54,7 @@ $colors: ('orange', 'grey', 'darkgrey', 'blue', 'red');
     width: 6em;
     height: 6em;
     border-radius: $border-radius;
+    overflow: hidden;
     
     &-inner {
       display: flex;
