@@ -1,0 +1,10 @@
+.games-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1em;
+}
+
+.games-list__item {
+  padding: 1em;
+  font-size: 2em;
+}
