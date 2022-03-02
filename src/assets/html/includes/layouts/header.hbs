@@ -1,8 +1,25 @@
-<header>
-    header
-
-  <!-- SVG-спрайт -->
-  <div class="d-none">
-    {{ svg-sprite-inject compilation }}
-  </div>
+<header class="header">
+  <nav class="nav header__nav">
+    <ul class="nav__list">
+      <li class="nav__item">
+        <a class="nav__link" href="/">
+          Главная
+        </a>
+      </li>
+      
+      <li class="nav__item">
+        <a class="nav__link" href="/games">
+          Игры
+        </a>
+      </li>
+      
+      <li class="nav__item">
+        <a class="nav__link" href="/ui">
+          Компоненты
+        </a>
+      </li>
+    </ul>
+  </nav>
+  
+  {{> svg-sprite }}
 </header>
